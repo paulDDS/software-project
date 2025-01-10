@@ -1,4 +1,5 @@
 from utils.ssl.Navigation import Navigation
+from utils.ssl.AgentNavigation import AgentNavigation
 from utils.ssl.base_agent import BaseAgent
 
 class ExampleAgent(BaseAgent):
@@ -9,7 +10,7 @@ class ExampleAgent(BaseAgent):
         if len(self.targets) == 0:
             return
 
-        target_velocity, target_angle_velocity = Navigation.goToPoint(self.robot, self.targets[0])
+        target_velocity, target_angle_velocity = AgentNavigation.goToPoint(self.robot, self.targets[0])
         self.set_vel(target_velocity)
         self.set_angle_vel(target_angle_velocity)
 
