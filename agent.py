@@ -10,7 +10,7 @@ class ExampleAgent(BaseAgent):
         if len(self.targets) == 0:
             return
 
-        target_velocity, target_angle_velocity = AgentNavigation.goToPoint(self.robot, self.targets[0])
+        target_velocity, target_angle_velocity = AgentNavigation.goToPoint(self.robot, self.targets[0], self.opponents, self.teammates)
         self.set_vel(target_velocity)
         self.set_angle_vel(target_angle_velocity)
 

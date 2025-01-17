@@ -20,7 +20,9 @@ M_TO_MM: float = 1000.0
 class AgentNavigation:
 
   @staticmethod
-  def goToPoint(robot: Robot, target: Point):
+  def goToPoint(robot: Robot, target: Point,
+                 opponents: dict[int, Robot] = dict(),
+                 teammates: dict[int, Robot] = dict()):
     target = Point(target.x * M_TO_MM, target.y * M_TO_MM)
     robot_position = Point(robot.x * M_TO_MM, robot.y * M_TO_MM)
     robot_angle = Navigation.degrees_to_radians(Geometry.normalize_angle(robot.theta, 0, 180))
