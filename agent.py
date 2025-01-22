@@ -11,6 +11,7 @@ class ExampleAgent(BaseAgent):
             return
 
         target_velocity, target_angle_velocity = AgentNavigation.goToPoint(self.robot, self.targets[0], self.opponents, self.teammates)
+        print(target_velocity)
         self.set_vel(target_velocity)
         self.set_angle_vel(target_angle_velocity)
 

@@ -17,7 +17,7 @@ MIN_DIST_TO_PROP_VELOCITY: float = 720
 ADJUST_ANGLE_MIN_DIST: float = 50
 M_TO_MM: float = 1000.0
 
-MIN_DISTANCE_TO_TURN = 100
+MIN_DISTANCE_TO_TURN = 220
 
 class AgentNavigation:
 
@@ -34,8 +34,6 @@ class AgentNavigation:
         if(dist < m_dist):
           m_dist = dist
           closest_opponent = opponent_position
-      else:
-        print(i)
     return m_dist, closest_opponent
   
   @staticmethod
@@ -47,9 +45,9 @@ class AgentNavigation:
   @staticmethod
   def avoid_obstacle(dist_center : Point, angle_center : float):
     if(angle_center > 0):
-      return AgentNavigation.rotate(dist_center, math.pi)
+      return AgentNavigation.rotate(dist_center, -math.pi/2)
     else:
-      return AgentNavigation.rotate(dist_center, -math.pi)
+      return AgentNavigation.rotate(dist_center, math.pi/2)
 
   
   @staticmethod
@@ -60,10 +58,24 @@ class AgentNavigation:
     robot_to_obs = Point(obstacle.x, obstacle.y).__sub__(robot_position)
     angle_to_turn = robot_to_obs.angle() - obs_to_goal.angle()
 
+    print(obs_to_goal)
+    print(robot_to_obs)
+    print(angle_to_turn)
+
     angle_center = Geometry.normalize_angle(angle_to_turn)
     new_dir = AgentNavigation.avoid_obstacle(robot_to_obs, angle_center)
 
+    print(new_dir)
+
     return new_dir
+  
+  @staticmethod
+  def total_velocity(new_dir : Point, dir : Point, min_dist):
+    coef = min_dist**2/(MIN_DISTANCE_TO_TURN**2)
+    new_coef = 1 - coef
+    new_dir.__mul__(new_coef)
+    dir.__mul__(coef)
+    return dir.__add__(new_dir)
 
   @staticmethod
   def goToPoint(robot: Robot, target: Point,
@@ -102,5 +114,12 @@ class AgentNavigation:
         return Point(0.0, 0.0), -kp * d_theta
       
     else:
+      v_angle = Geometry.abs_smallest_angle_diff(math.pi - ANGLE_EPSILON, d_theta)
+
+      v_proportional = v_angle * (max_velocity / (math.pi - ANGLE_EPSILON))
       new_dir = AgentNavigation.new_direction(robot, target, close_opponent)
-      return new_dir, -kp * 0
+
+      global_final_velocity = Geometry.from_polar(v_proportional, new_dir.angle())
+      target_velocity = Navigation.global_to_local_velocity(global_final_velocity.x, global_final_velocity.y,robot_angle)
+
+      return target_velocity, -kp * d_theta
