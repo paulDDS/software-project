@@ -45,13 +45,25 @@ class AgentNavigation:
     return Point(x, y)
   
   @staticmethod
-  def avoid_obstacle(robot: Robot, target: Point, obstacle: Point):
+  def avoid_obstacle(dist_center : Point, angle_center : float):
+    if(angle_center > 0):
+      return AgentNavigation.rotate(dist_center, math.pi)
+    else:
+      return AgentNavigation.rotate(dist_center, -math.pi)
+
+  
+  @staticmethod
+  def new_direction(robot: Robot, target: Point, obstacle: Point):
     robot_position = Point(robot.x * M_TO_MM, robot.y * M_TO_MM)
+
     obs_to_goal = Point(target.x, target.y).__sub__(obstacle)
     robot_to_obs = Point(obstacle.x, obstacle.y).__sub__(robot_position)
     angle_to_turn = robot_to_obs.angle() - obs_to_goal.angle()
-    return Geometry.normalize_angle(angle_to_turn)
 
+    angle_center = Geometry.normalize_angle(angle_to_turn)
+    new_dir = AgentNavigation.avoid_obstacle(robot_to_obs, angle_center)
+
+    return new_dir
 
   @staticmethod
   def goToPoint(robot: Robot, target: Point,
@@ -90,4 +102,5 @@ class AgentNavigation:
         return Point(0.0, 0.0), -kp * d_theta
       
     else:
-      return Point(0.0, 0.0), -kp * d_theta
+      new_dir = AgentNavigation.new_direction(robot, target, close_opponent)
+      return new_dir, -kp * 0
