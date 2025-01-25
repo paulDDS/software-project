@@ -6,26 +6,19 @@ from utils.Point import Point
 from utils.Geometry import Geometry
 from utils.ssl.Navigation import Navigation
 from typing import Tuple
-
-
-PROP_VELOCITY_MIN_FACTOR: float = 0.1
-MAX_VELOCITY: float = 1.5
-ANGLE_EPSILON: float = 0.1
-ANGLE_KP: float = 5
-MIN_DIST_TO_PROP_VELOCITY: float = 720
-
-ADJUST_ANGLE_MIN_DIST: float = 50
-M_TO_MM: float = 1000.0
+from utils.ssl.Navigation import PROP_VELOCITY_MIN_FACTOR, MAX_VELOCITY, ANGLE_EPSILON, ANGLE_KP, MIN_DIST_TO_PROP_VELOCITY, ADJUST_ANGLE_MIN_DIST, M_TO_MM
 
 MIN_DISTANCE_TO_TURN = 220
+VEL_COEF = 200
 
 class AgentNavigation:
 
   @staticmethod
-  def min_dist(robot : Robot, opponents: dict[int, Robot] = dict()) -> Tuple[float, float]:
+  def min_dist(robot : Robot, opponents: dict[int, Robot] = dict()) -> Tuple[float, Point, Point]:
     robot_position = Point(robot.x * M_TO_MM, robot.y * M_TO_MM)
     m_dist = 10000
     closest_opponent = Point(0, 0)
+    opponent_vel = Point (0,0)
     for i in range(1, 22):
       if(opponents.get(i) is not None):
         opponent = opponents[i]
@@ -34,7 +27,8 @@ class AgentNavigation:
         if(dist < m_dist):
           m_dist = dist
           closest_opponent = opponent_position
-    return m_dist, closest_opponent
+          opponent_vel = Point(opponent.v_x, opponent.v_y)
+    return m_dist, closest_opponent, opponent_vel
   
   @staticmethod
   def rotate(vector : Point, angle : float) -> Point:          #Sentido Anti-Horário
@@ -58,14 +52,8 @@ class AgentNavigation:
     robot_to_obs = Point(obstacle.x, obstacle.y).__sub__(robot_position)
     angle_to_turn = robot_to_obs.angle() - obs_to_goal.angle()
 
-    print(obs_to_goal)
-    print(robot_to_obs)
-    print(angle_to_turn)
-
     angle_center = Geometry.normalize_angle(angle_to_turn)
     new_dir = AgentNavigation.avoid_obstacle(robot_to_obs, angle_center)
-
-    print(new_dir)
 
     return new_dir
   
@@ -99,7 +87,8 @@ class AgentNavigation:
     target_angle = (target - robot_position).angle()
     d_theta = Geometry.smallest_angle_diff(target_angle, robot_angle)
 
-    min_dist, close_opponent = AgentNavigation.min_dist(robot, opponents)
+    min_dist, close_opponent, opponent_vel = AgentNavigation.min_dist(robot, opponents)
+
     if(min_dist > MIN_DISTANCE_TO_TURN):
 
       if distance_to_target > ADJUST_ANGLE_MIN_DIST:
@@ -117,9 +106,11 @@ class AgentNavigation:
       v_angle = Geometry.abs_smallest_angle_diff(math.pi - ANGLE_EPSILON, d_theta)
 
       v_proportional = v_angle * (max_velocity / (math.pi - ANGLE_EPSILON))
-      new_dir = AgentNavigation.new_direction(robot, target, close_opponent)
+      new_dir = AgentNavigation.new_direction(robot, target, close_opponent.__add__(opponent_vel.__mul__(VEL_COEF)))
 
       global_final_velocity = Geometry.from_polar(v_proportional, new_dir.angle())
       target_velocity = Navigation.global_to_local_velocity(global_final_velocity.x, global_final_velocity.y,robot_angle)
+
+      d_theta = Geometry.smallest_angle_diff(global_final_velocity.angle(), robot_angle) 
 
       return target_velocity, -kp * d_theta
