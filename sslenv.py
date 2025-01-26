@@ -84,6 +84,10 @@ class SSLExampleEnv(SSLBaseEnv):
         if len(self.targets) == 0:
             for i in range(self.targets_per_round):
                 self.targets.append(Point(self.x(), self.y()))
+            for i in range(len(self.my_agents)):
+                self.my_agents[i].helper.declare_position(self.my_agents[i].id, self.my_agents[i].pos)
+            self.my_agents[0].helper.update(self.targets)
+            self.my_agents[0].helper.allocate()
         
         obstacles = {id: robot for id, robot in self.frame.robots_blue.items()}
         for i in range(0, self.n_robots_yellow):
@@ -136,6 +140,10 @@ class SSLExampleEnv(SSLBaseEnv):
         pos_frame.robots_blue[0] = Robot(x=self.x(), y=self.y(), theta=theta())
 
         self.targets = [Point(x=self.x(), y=self.y())]
+
+        self.my_agents[0].helper.declare_position(self.my_agents[0].id, self.my_agents[0].pos)
+        self.my_agents[0].helper.update(self.targets)
+        self.my_agents[0].helper.allocate()
 
         places = KDTree()
         places.insert((pos_frame.ball.x, pos_frame.ball.y))
