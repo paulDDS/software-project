@@ -14,11 +14,13 @@ VEL_COEF = 200
 class AgentNavigation:
 
   @staticmethod
-  def min_dist(robot : Robot, opponents: dict[int, Robot] = dict()) -> Tuple[float, Point, Point]:
+  def min_dist(robot : Robot, opponents: dict[int, Robot] = dict(), 
+               teammates: dict[int, Robot] = dict()) -> Tuple[float, Point, Point]:
     robot_position = Point(robot.x * M_TO_MM, robot.y * M_TO_MM)
-    m_dist = 10000
+    m_dist = float('inf')
     closest_opponent = Point(0, 0)
-    opponent_vel = Point (0,0)
+    obstacle_vel = Point (0,0)
+
     for i in range(1, 22):
       if(opponents.get(i) is not None):
         opponent = opponents[i]
@@ -27,8 +29,19 @@ class AgentNavigation:
         if(dist < m_dist):
           m_dist = dist
           closest_opponent = opponent_position
-          opponent_vel = Point(opponent.v_x, opponent.v_y)
-    return m_dist, closest_opponent, opponent_vel
+          obstacle_vel = Point(opponent.v_x, opponent.v_y)
+
+    for i in range(0, 7):
+      if(teammates.get(i) is not None and i != robot.id):
+        teammate = teammates[i]
+        teammate_position = Point(teammate.x * M_TO_MM, teammate.y * M_TO_MM)
+        dist = robot_position.dist_to(teammate_position)
+        if(dist < m_dist):
+          m_dist = dist
+          closest_opponent = teammate_position
+          obstacle_vel = Point(teammate.v_x, teammate.v_y)
+
+    return m_dist, closest_opponent, obstacle_vel
   
   @staticmethod
   def rotate(vector : Point, angle : float) -> Point:          #Sentido Anti-Horário
@@ -87,7 +100,7 @@ class AgentNavigation:
     target_angle = (target - robot_position).angle()
     d_theta = Geometry.smallest_angle_diff(target_angle, robot_angle)
 
-    min_dist, close_opponent, opponent_vel = AgentNavigation.min_dist(robot, opponents)
+    min_dist, close_opponent, opponent_vel = AgentNavigation.min_dist(robot, opponents, teammates)
 
     if(min_dist > MIN_DISTANCE_TO_TURN):
 
